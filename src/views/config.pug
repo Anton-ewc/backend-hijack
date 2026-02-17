@@ -244,6 +244,8 @@ html(lang='en')
             script(type="text/javascript").
                 var __basePath = './';
             script(src="ag-grid-enterprise.min.js")
+            script.
+                agGrid.LicenseManager.setLicenseKey("#{ag_key}");
             script( type="module" src="config.js")
         script.
             $('.countrypicker').countrypicker();
