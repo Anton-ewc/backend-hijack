@@ -40,7 +40,7 @@ app.get('/', function (req, res) {
 app.get("/home", async function (req, res, next) {
     try {
         if (req.session.loggedin) {
-            res.render("config")
+            res.render("config", {ag_key: config.ag_key})
         } else {
             // Not logged in
             res.redirect('/');
