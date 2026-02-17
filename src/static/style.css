@@ -1,0 +1,122 @@
+* {
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "segoe ui", roboto, oxygen, ubuntu, cantarell, "fira sans", "droid sans", "helvetica neue", Arial, sans-serif;
+    font-size: 16px;
+}
+body {
+    background-color: #435165;
+}
+#logs-div {
+    background-color: #435165;
+}
+#config-div {
+    background-color: #435165;
+}
+td {
+    vertical-align: middle;
+}
+tr.htmx-swapping td {
+    opacity: 0;
+    transition: opacity 1s ease-out;
+  }
+
+.config {
+    width: 600px;
+    background-color: #ffffff;
+    box-shadow: 0 0 9px 0 rgba(0, 0, 0, 0.3);
+    margin: 20px auto;
+}
+
+.config h1 {
+    text-align: center;
+    color: #5b6574;
+    font-size: 24px;
+    padding: 20px 0 20px 0;
+    border-bottom: 1px solid #dee0e4;
+}
+.login form {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+.config-date {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding-bottom: 20px;
+}
+.config input[type=text],input[type=number], input[type=password] {
+    width: 100%;
+    padding: 12px 20px;
+    margin: 8px 8px;
+    display: inline-block;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+.config form input[type="submit"],.add-redirect {
+    width: 100%;
+    padding: 15px;
+    margin-top: 20px;
+    background-color: #3274d6;
+    border: 0;
+    cursor: pointer;
+    font-weight: bold;
+    color: #ffffff;
+    transition: background-color 0.2s;
+}
+.config form input[type="submit"]:hover {
+    background-color: #2868c7;
+    transition: background-color 0.2s;
+}
+.config input[type=checkbox] {
+    padding: 8px 8px;
+    margin: 8px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+.config label {
+    font-weight: 700;
+    margin-left: 12px;
+}
+.select-label{
+    margin-bottom: 10px;
+}
+.logs {
+    width: 100%;
+}
+.title {
+    color: #ffffff;
+}
+.nav {
+    display: flex;
+    justify-content: space-between;
+}
+.logs-link {
+    margin-right: 24px;
+}
+.btn-group {
+    display: flex;
+    justify-content: space-around;
+}
+.btn-row {
+    margin-right: 1rem;
+}
+.hidden{
+    display: none;
+}
+
+.bootstrap-select {
+  width: 260px!important;
+}
+.dropdown-toggle,.dropdown-menu {
+  width: 260px!important;
+}
+.dropdown-menu div.bs-searchbox {
+    padding: 0px!important;
+    margin: 0px!important;
+}
+
+button.dropdown-toggle,div.dropdown-menu {
+  margin-left: 8px!important;
+}
