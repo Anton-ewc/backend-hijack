@@ -1,0 +1,12 @@
+tr
+    td #{redirect.url}
+    td #{redirect.url_redirect}
+    td #{redirect.country}
+    td 
+        span(class="badge bg-secondary") #{redirect.redirect_percent} %
+    td #{redirect.start_time}
+    td #{redirect.end_time}
+    td #{redirect.days}
+    td
+        button(class="btn btn-danger" hx-delete=`/delete/${redirect.id}`)
+            i(class="bi bi-trash")
