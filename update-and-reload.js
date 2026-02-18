@@ -1,4 +1,7 @@
 const { exec } = require("child_process");
+const pkg = require("./package.json");
+
+const REPO_URL = pkg?.repository?.url;
 
 function run(cmd) {
   return new Promise((resolve, reject) => {
@@ -13,7 +16,10 @@ function run(cmd) {
 
 (async () => {
   try {
-    await run("git pull");
+    const pullCmd = REPO_URL
+      ? `git pull ${REPO_URL}`
+      : "git pull";
+    await run(pullCmd);
     await run("npm install");
     await run("pm2 reload pm2.config.json --env production");
     console.log("Updated from git and reloaded.");
