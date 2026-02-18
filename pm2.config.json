@@ -12,16 +12,12 @@
       "env_production": {
         "NODE_ENV": "production"
       }
+    },
+    {
+      "name": "backend-hijack-updater",
+      "script": "update-and-reload.js",
+      "cron_restart": "*/5 * * * *",
+      "autorestart": false
     }
-  ],
-  "deploy": {
-    "production": {
-      "user": "YOUR_SSH_USER",
-      "host": "YOUR_SERVER_HOST",
-      "ref": "origin/main",
-      "repo": "git@github.com:Anton-ewc/backend-hijack.git",
-      "path": ".",
-      "post-deploy": "npm install && pm2 reload pm2.config.json --env production"
-    }
-  }
+  ]
 }
