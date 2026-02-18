@@ -8,10 +8,16 @@
     "start": "node  src/index.js",
     "dev": "nodemon  src/index.js",
     "build": "npm install && npm install --only=dev && npm install --only=production",
-    "pm2:init": "node pm2-init.js"
+    "push": "npm version patch && git push",
+    "push-minor": "npm version minor && git push",
+    "push-major": "npm version major && git push"
   },
   "author": "",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Anton-ewc/backend-hijack.git"
+  },
   "dependencies": {
     "ag-grid-community": "^31.0.0",
     "ag-grid-enterprise": "^31.0.0",
