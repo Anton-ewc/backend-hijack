@@ -10,10 +10,7 @@ const express = require("express");
 const pug = require("pug");
 const path = require('path');
 const session = require('express-session');
-const mysql = require('mysql2');
-
-const DBService = require('./db/serviceDB')
-const connection = require('./db/index')
+const {DBService, mysql, connection} = require('./db/serviceDB');
 
 const app = express();
 app.set("view engine", "pug");
@@ -29,7 +26,6 @@ app.use(session({
     saveUninitialized: true
 }));
 
-// Routes
 
 app.get('/', function (req, res) {
     // Render login template
@@ -133,7 +129,7 @@ app.delete("/delete/:id", async (req, res) => {
 app.get("/logs", (req, res) => {
     try {
         if (req.session.loggedin) {
-        res.render("logs")
+        res.render("logs", {ag_key: config.ag_key})
         } else {
             // Not logged in
             res.redirect('/');
@@ -166,18 +162,8 @@ app.post("/logs/data", async (req, res) => {
 app.get("/logs/count", async (req, res) => {
     try {
         if (req.session.loggedin) {
-                sqlQuery = `select COUNT(*) AS total FROM hijack.logs;`
-                let count = await new Promise(response => {
-                    connection.query(sqlQuery, function (err, rows) {
-                        if (err) console.log(err);
-                        // end connection on last one
-                        if (rows[0]) {
-                            response(rows[0])
-                        }
-                        // connection.end();
-                    });
-                })
-                res.json(count.total)
+				let count = await DBService.sqlExec(`select COUNT(*) AS total FROM hijack.logs;`);
+                res.json(count[0].total)
         } else {
             // Not logged in
             res.redirect('/');
@@ -192,20 +178,9 @@ app.get("/logs/count", async (req, res) => {
 app.post("/logs/count", async (req, res) => {
     try {
         if (req.session.loggedin) {
-            //console.log(req.body);
-              let where = await DBService.createWhereSql(req.body);
-                sqlQuery = `select COUNT(*) AS total FROM hijack.logs `+where+`;`
-                let count = await new Promise(response => {
-                    connection.query(sqlQuery, function (err, rows) {
-                        if (err) console.log(err);
-                        // end connection on last one
-                        if (rows[0]) {
-                            response(rows[0])
-                        }
-                        // connection.end();
-                    });
-                })
-                res.json(count.total)
+			let where = await DBService.createWhereSql(req.body);
+			let count = await DBService.sqlExec(`select COUNT(*) AS total FROM hijack.logs `+where+`;`);
+			res.json(count[0].total)
         } else {
             // Not logged in
             res.redirect('/');
