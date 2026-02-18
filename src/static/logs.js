@@ -30,7 +30,9 @@ const gridOptions = {
                 debounceMs: 1000,
                 maxNumConditions: 1,
             },
+            //comparator: (valueA, valueB, nodeA, nodeB, isInverted) => valueA - valueB,
             rowGroup: true,
+            sort: "desc",
             enableRowGroup: true,
             hide: true,
             filter: 'agTextColumnFilter',
@@ -101,10 +103,16 @@ const gridOptions = {
     ],
     // enable pagination
     pagination: true,
-    // 20 rows per page (default is 100)
+    // 50 rows per page (default is 100)
     paginationPageSize: 50,
-    // fetch 10 rows per block as page size is 10 (default is 100)
-    cacheBlockSize: 50,
+    // fetch 50 rows per block as page size is 50 (default is 100)
+    cacheBlockSize: 1000,
+    paginationPageSizeSelector: [50, 100, 200, 500, 1000],
+    suppressPaginationPanel: false,
+    suppressScrollOnNewData: true,
+    //paginationNumberFormatter: (params) => {
+    //  return "[" + params.value.toLocaleString() + "]";
+    //},
 
     getChildCount: (data) => {
         return data ? data.count : undefined;
@@ -159,6 +167,10 @@ function getServerSideDatasource() {
                         // inform the grid request failed
                         params.fail();
                     }
+                })
+                .catch(function (error) {
+                    console.error('Error fetching data:', error);
+                    params.fail();
                 });
 
         },
@@ -209,6 +221,18 @@ async function getTotalCountFromServer(gridApi){
     });
     const values = await response.json();
     document.getElementById('total-count').innerHTML=`<h6 class="title">Total Count:<b> ${values}</b></h6>`;
-    if(document.getElementById('total')) document.getElementById('total').remove();
-    document.getElementsByClassName("ag-paging-panel")[0].innerHTML += ('<div id="total" style="left:0;position: fixed;">Total Count:<b>'+values+'</b></div>');
+    // Update total count without manipulating pagination panel HTML directly
+    let totalElement = document.getElementById('total');
+    if (!totalElement) {
+        const pagingPanel = document.getElementsByClassName("ag-paging-panel")[0];
+        if (pagingPanel) {
+            totalElement = document.createElement('div');
+            totalElement.id = 'total';
+            totalElement.style.cssText = 'left:0;position: fixed;';
+            pagingPanel.appendChild(totalElement);
+        }
+    }
+    if (totalElement) {
+        totalElement.innerHTML = 'Total Count:<b>'+values+'</b>';
+    }
 }

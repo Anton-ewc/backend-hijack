@@ -219,18 +219,22 @@ class DBService {
         const sortModel = request.sortModel;
 
         const grouping = this.isDoingGrouping(rowGroupCols, groupKeys);
-
+console.log("grouping:",grouping);
         const sortParts = [];
         if (sortModel) {
 
             const groupColIds =
                 rowGroupCols.map(groupCol => groupCol.id)
                     .slice(0, groupKeys.length + 1);
-
+console.log("groupColIds:",groupColIds);
             sortModel.forEach(function (item) {
-                if (grouping && groupColIds.indexOf(item.colId) < 0) {
+            	//grouping && 
+                if (groupColIds.indexOf(item.colId) < 0) {
                     // ignore
+                    //sortParts.push('count ' + item.sort);
                 } else {
+                	if(grouping) sortParts.push('count ' + item.sort);
+                	console.log(item.colId + ' ' + item.sort);
                     sortParts.push(item.colId + ' ' + item.sort);
                 }
             });
@@ -248,6 +252,7 @@ class DBService {
         // if we are grouping by more columns than we have keys for (that means the user
         // has not expanded a lowest level group, OR we are not grouping at all).
         return rowGroupCols.length > groupKeys.length;
+        //return rowGroupCols.length > 0;
     }
 
     createLimitSql(request) {
