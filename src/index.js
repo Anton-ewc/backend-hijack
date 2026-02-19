@@ -4,7 +4,7 @@ process.on('unhandledRejection', (reason, p) => {
 process.on('uncaughtException', (error) => {
   console.error(`Caught exception: ${error}\n` + `Exception origin: ${error.stack}`);
 });
-// is ok
+
 const config = require('./settings');
 const express = require("express");
 const pug = require("pug");
