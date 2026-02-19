@@ -62,7 +62,7 @@ async function checkCurrentVersion() {
     //https://raw.githubusercontent.com/Anton-ewc/backend-hijack.git/refs/heads/main/package.json
     
     const urlHttps = REPO_URL.replace("git@github.com:", "https://github.com/").replace(".git", "");
-    const urlRawPackageJson = `${REPO_URL.replace(".git", "").replace(/https:\/\/github\.com/gim,'https://raw.githubusercontent.com')}/refs/heads/main/package.json`;
+    const urlRawPackageJson = `${REPO_URL.replace(".git", "").replace(/https:\/\/github\.com/gim,'https://raw.githubusercontent.com')}/refs/heads/main/package.json?lastmod=`+Date.now();
     try {
       console.log(`Checking for updates on https releases page: ${urlHttps}/releases/latest`);
       versionPageJson = (await runSilent(`curl -s ${urlHttps}/releases/latest`)).trim();
@@ -78,6 +78,7 @@ async function checkCurrentVersion() {
 
 (async () => {
   console.log(`Checking for updates`);
+  let versionChanged = false;
   try {
     const currentVersion = await checkCurrentVersion();
     console.log(`currentVersion from github: ${currentVersion}`);
@@ -93,6 +94,7 @@ async function checkCurrentVersion() {
         : "git pull";
         const rez = await runSilent(pullCmd);
         console.log(`rez: ${rez}`);
+        versionChanged = true;
       } catch(e) {
         //https://github.com/Anton-ewc/backend-hijack/archive/refs/heads/main.zip
         const urlZipFile = REPO_URL.replace("git@github.com:", "https://github.com/").replace(".git", "")+"/archive/refs/heads/main.zip";
@@ -157,19 +159,19 @@ async function checkCurrentVersion() {
         fs.rmSync(tempExtractDir, { recursive: true, force: true });
         fs.unlinkSync(zipFile);
         console.log(`Cleaned up temporary files`);
+        versionChanged = true;
       }
 
     }
+    if(versionChanged) {
+      if(currentVersion.replace(/\.[0-9]+$/g, '') !== CURRENT_VERSION.replace(/\.[0-9]+$/g, '')) {
+        await run("npm install");
+      }
+      console.log("Updated from git and reloaded.");
+      process.exit(0);
+      //await run("pm2 reload pm2.config.json --env production");
 
-    /*
-    const pullCmd = REPO_URL
-      ? `git pull ${REPO_URL}`
-      : "git pull";
-    await run(pullCmd);
-    await run("npm install");
-    await run("pm2 reload pm2.config.json --env production");
-    console.log("Updated from git and reloaded.");
-    */
+    }
   } catch (e) {
     console.error("Update failed:", e.message);
     process.exit(1);
