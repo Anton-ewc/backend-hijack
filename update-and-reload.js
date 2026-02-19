@@ -88,7 +88,7 @@ async function checkCurrentVersion() {
       console.log(`currentVersion from github: ${currentVersion}`);
       if(currentVersion === CURRENT_VERSION) {
         console.log("Current version is the latest version");
-        process.exit(0);
+        //process.exit(0);
       } else {
         console.log(`Current version is not the latest version, updating to ${currentVersion}`);
         try{
@@ -171,14 +171,14 @@ async function checkCurrentVersion() {
         if(currentVersion.replace(/\.[0-9]+$/g, '') !== CURRENT_VERSION.replace(/\.[0-9]+$/g, '')) {
           await run("npm install");
         }
-        console.log("Updated from git and reloaded.");
+        console.log("RELOAD!!! Updated from git and reloaded.");
         process.exit(0);
         //await run("pm2 reload pm2.config.json --env production");
 
       }
     } catch (e) {
       console.error("Update failed:", e.message);
-      process.exit(1);
+      //process.exit(1);
     }
   },recheck_interval);
 })();
