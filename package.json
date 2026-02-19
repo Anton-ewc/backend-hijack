@@ -6,12 +6,12 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node  src/index.js",
-    "uplodate": "npm run format && git add . && git commit -am \"new version\"",
+    "uplodate": "git add . && git commit -am \"new version\"",
     "postversion": "git push && git push --tags",
     "dev": "nodemon  src/index.js",
     "build": "npm install && npm install --only=dev && npm install --only=production",
     "publish": "lerna publish from-package --contents dist --dist-tag next --force-publish",
-    "push": "npm version patch && git commit -am \"new version\" && git push",
+    "push": "npm run uplodate && npm version patch && git push",
     "push-minor": "npm version minor && git push",
     "push-major": "npm version major && git push",
     "compublish": "npm run uplodate && npm version patch"
