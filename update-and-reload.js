@@ -1,8 +1,19 @@
 const { exec } = require("child_process");
+const fs = require("fs");
 const pkg = require("./package.json");
+const path = require("path");
 
 const REPO_URL = pkg?.repository?.url;
 const CURRENT_VERSION = pkg?.version;
+const projectName = pkg?.name;
+process.chdir(path.dirname(require.main.filename));
+
+const projectRoot = path.join(process.cwd(),'../');
+console.log(`projectRoot: ${projectRoot}`);
+process.chdir(projectRoot);
+//process.exit(0);
+
+const crossOsUnzipCommand = process.platform === "win32" ? "unzip" : "unzip";
 
 function run(cmd) {
   return new Promise((resolve, reject) => {
@@ -25,23 +36,40 @@ function runSilent(cmd) {
   });
 }
 
+// Run a command and capture both stdout and stderr without printing to console
+function runSilentWithStderr(cmd) {
+  return new Promise((resolve, reject) => {
+    exec(cmd, (err, stdout, stderr) => {
+      if (err) {
+        return reject(new Error(stderr || err.message));
+      }
+      resolve({ stdout, stderr });
+    });
+  });
+}
+
 async function checkCurrentVersion() {
   console.log(`CURRENT_VERSION: ${CURRENT_VERSION}`);
   let versionOnGithub;
   try {
-    console.log(`Checking for updates on git: ${REPO_URL}`);
-    let verRez = await runSilent(`git ls-remote ${REPO_URL} refs/tags/v${CURRENT_VERSION}`);
+    throw new Error("test");
+ //   console.log(`Checking for updates on git: ${REPO_URL}`);
+  //  let verRez = await runSilent(`git ls-remote ${REPO_URL} refs/tags/v${CURRENT_VERSION}`);
     //console.log(verRez);
-    versionOnGithub = (verRez.replace(/.*\/v/g, '')).trim();
+ //   versionOnGithub = (verRez.replace(/.*\/v/g, '')).trim();
   } catch (e) {
+    //https://raw.githubusercontent.com/Anton-ewc/backend-hijack/refs/heads/main/package.json
+    //https://raw.githubusercontent.com/Anton-ewc/backend-hijack.git/refs/heads/main/package.json
+    
     const urlHttps = REPO_URL.replace("git@github.com:", "https://github.com/").replace(".git", "");
+    const urlRawPackageJson = `${REPO_URL.replace(".git", "").replace(/https:\/\/github\.com/gim,'https://raw.githubusercontent.com')}/refs/heads/main/package.json`;
     try {
       console.log(`Checking for updates on https releases page: ${urlHttps}/releases/latest`);
       versionPageJson = (await runSilent(`curl -s ${urlHttps}/releases/latest`)).trim();
       versionOnGithub = versionPageJson.match(/<meta property="og:title" content="v(\d+\.\d+\.\d+)"/)[1];
     } catch(e) {
-      console.log(`Checking for updates on https package.json: ${urlHttps}/blob/main/package.json`);
-      versionPageJson = (await runSilent(`curl -s ${urlHttps}/blob/main/package.json`)).trim();
+      console.log(`Checking for updates on https package.json: ${urlRawPackageJson}`);
+      versionPageJson = (await runSilent(`curl -s ${urlRawPackageJson}`)).trim();
       versionOnGithub = versionPageJson.match(/"version": "(\d+\.\d+\.\d+)"/)[1];
     }
   }
@@ -52,19 +80,87 @@ async function checkCurrentVersion() {
   console.log(`Checking for updates`);
   try {
     const currentVersion = await checkCurrentVersion();
+    console.log(`currentVersion from github: ${currentVersion}`);
     if(currentVersion === CURRENT_VERSION) {
       console.log("Current version is the latest version");
       process.exit(0);
     } else {
       console.log(`Current version is not the latest version, updating to ${currentVersion}`);
+      try{
+        console.log("Update via git:");
+        const pullCmd = REPO_URL
+        ? `git pull ${REPO_URL}`
+        : "git pull";
+        const rez = await runSilent(pullCmd);
+        console.log(`rez: ${rez}`);
+      } catch(e) {
+        //https://github.com/Anton-ewc/backend-hijack/archive/refs/heads/main.zip
+        const urlZipFile = REPO_URL.replace("git@github.com:", "https://github.com/").replace(".git", "")+"/archive/refs/heads/main.zip";
+        console.log("Update via curl:");
+        console.log(`Downloading from: ${urlZipFile}`);
+        const zipFile = "backend-hijack-main.zip";
+        // Use -L to follow redirects, -f to fail on HTTP errors, -s for silent
+        const updateCmd = `curl -L -f -s ${urlZipFile} -o ${zipFile}`;
+        try {
+          const rez = await runSilentWithStderr(updateCmd);
+          console.log(`Download completed`);
+        } catch(downloadErr) {
+          throw new Error(`Failed to download zip file: ${downloadErr.message}`);
+        }
+
+        // Verify the file was downloaded and has content
+        if (!fs.existsSync(zipFile)) {
+          throw new Error(`Downloaded file ${zipFile} does not exist`);
+        }
+        const stats = fs.statSync(zipFile);
+        if (stats.size === 0) {
+          throw new Error(`Downloaded file ${zipFile} is empty (0 bytes)`);
+        }
+        console.log(`Downloaded file size: ${stats.size} bytes`);
+
+        const targetDir = path.join(projectRoot, projectName);
+        console.log(`targetDir: ${targetDir}`);
+        
+        // Extract to a temporary directory first
+        const tempExtractDir = path.join(projectRoot, `temp-${Date.now()}`);
+        const unzipCmd = `${crossOsUnzipCommand} ${zipFile} -d ${tempExtractDir}`;
+        const rezUnzip = await runSilent(unzipCmd);
+        console.log(`Extracted to temp directory: ${tempExtractDir}`);
+
+        // The zip contains a backend-hijack-main folder, move its contents to target
+        const extractedSubDir = path.join(tempExtractDir, "backend-hijack-main");
+        if (!fs.existsSync(extractedSubDir)) {
+          throw new Error(`Expected extracted directory ${extractedSubDir} does not exist`);
+        }
+
+        // Move all contents from extractedSubDir to targetDir (overwrite existing)
+        const files = fs.readdirSync(extractedSubDir);
+        for (const file of files) {
+          const srcPath = path.join(extractedSubDir, file);
+          const destPath = path.join(targetDir, file);
+
+          // If destination exists, remove it first to avoid EPERM on Windows
+          if (fs.existsSync(destPath)) {
+            const stat = fs.statSync(destPath);
+            if (stat.isDirectory()) {
+              fs.rmSync(destPath, { recursive: true, force: true });
+            } else {
+              fs.unlinkSync(destPath);
+            }
+          }
+
+          fs.renameSync(srcPath, destPath);
+        }
+        console.log(`Moved ${files.length} items to ${targetDir}`);
+
+        // Clean up: remove temp directory and zip file
+        fs.rmSync(tempExtractDir, { recursive: true, force: true });
+        fs.unlinkSync(zipFile);
+        console.log(`Cleaned up temporary files`);
+      }
+
     }
-    /*
-    console.log(`isCurrentVersion: ${isCurrentVersion}`);
-    if (!isCurrentVersion) {
-      console.log("Current version is not the latest version");
-      process.exit(0);
-    }
-    */
+
     /*
     const pullCmd = REPO_URL
       ? `git pull ${REPO_URL}`
