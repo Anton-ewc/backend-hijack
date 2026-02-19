@@ -5,6 +5,7 @@ process.on('uncaughtException', (error) => {
   console.error(`Caught exception: ${error}\n` + `Exception origin: ${error.stack}`);
 });
 //OK
+const config = require('../update-and-reload');
 const config = require('./settings');
 const express = require("express");
 const pug = require("pug");

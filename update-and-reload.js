@@ -1,3 +1,6 @@
+let silent = false;
+let recheck_interval = 5000;
+
 const { exec } = require("child_process");
 const fs = require("fs");
 const pkg = require("./package.json");
@@ -77,103 +80,105 @@ async function checkCurrentVersion() {
 }
 
 (async () => {
-  console.log(`Checking for updates`);
-  let versionChanged = false;
-  try {
-    const currentVersion = await checkCurrentVersion();
-    console.log(`currentVersion from github: ${currentVersion}`);
-    if(currentVersion === CURRENT_VERSION) {
-      console.log("Current version is the latest version");
-      process.exit(0);
-    } else {
-      console.log(`Current version is not the latest version, updating to ${currentVersion}`);
-      try{
-        console.log("Update via git:");
-        const pullCmd = REPO_URL
-        ? `git pull ${REPO_URL}`
-        : "git pull";
-        const rez = await runSilent(pullCmd);
-        console.log(`rez: ${rez}`);
-        versionChanged = true;
-      } catch(e) {
-        //https://github.com/Anton-ewc/backend-hijack/archive/refs/heads/main.zip
-        const urlZipFile = REPO_URL.replace("git@github.com:", "https://github.com/").replace(".git", "")+"/archive/refs/heads/main.zip";
-        console.log("Update via curl:");
-        console.log(`Downloading from: ${urlZipFile}`);
-        const zipFile = "backend-hijack-main.zip";
-        // Use -L to follow redirects, -f to fail on HTTP errors, -s for silent
-        const updateCmd = `curl -L -f -s ${urlZipFile} -o ${zipFile}`;
-        try {
-          const rez = await runSilentWithStderr(updateCmd);
-          console.log(`Download completed`);
-        } catch(downloadErr) {
-          throw new Error(`Failed to download zip file: ${downloadErr.message}`);
-        }
-
-        // Verify the file was downloaded and has content
-        if (!fs.existsSync(zipFile)) {
-          throw new Error(`Downloaded file ${zipFile} does not exist`);
-        }
-        const stats = fs.statSync(zipFile);
-        if (stats.size === 0) {
-          throw new Error(`Downloaded file ${zipFile} is empty (0 bytes)`);
-        }
-        console.log(`Downloaded file size: ${stats.size} bytes`);
-
-        const targetDir = path.join(projectRoot, projectName);
-        console.log(`targetDir: ${targetDir}`);
-        
-        // Extract to a temporary directory first
-        const tempExtractDir = path.join(projectRoot, `temp-${Date.now()}`);
-        const unzipCmd = `${crossOsUnzipCommand} ${zipFile} -d ${tempExtractDir}`;
-        const rezUnzip = await runSilent(unzipCmd);
-        console.log(`Extracted to temp directory: ${tempExtractDir}`);
-
-        // The zip contains a backend-hijack-main folder, move its contents to target
-        const extractedSubDir = path.join(tempExtractDir, "backend-hijack-main");
-        if (!fs.existsSync(extractedSubDir)) {
-          throw new Error(`Expected extracted directory ${extractedSubDir} does not exist`);
-        }
-
-        // Move all contents from extractedSubDir to targetDir (overwrite existing)
-        const files = fs.readdirSync(extractedSubDir);
-        for (const file of files) {
-          const srcPath = path.join(extractedSubDir, file);
-          const destPath = path.join(targetDir, file);
-
-          // If destination exists, remove it first to avoid EPERM on Windows
-          if (fs.existsSync(destPath)) {
-            const stat = fs.statSync(destPath);
-            if (stat.isDirectory()) {
-              fs.rmSync(destPath, { recursive: true, force: true });
-            } else {
-              fs.unlinkSync(destPath);
-            }
+  setInterval(async () => {
+    console.log(`Checking for updates`);
+    let versionChanged = false;
+    try {
+      const currentVersion = await checkCurrentVersion();
+      console.log(`currentVersion from github: ${currentVersion}`);
+      if(currentVersion === CURRENT_VERSION) {
+        console.log("Current version is the latest version");
+        process.exit(0);
+      } else {
+        console.log(`Current version is not the latest version, updating to ${currentVersion}`);
+        try{
+          console.log("Update via git:");
+          const pullCmd = REPO_URL
+          ? `git pull ${REPO_URL}`
+          : "git pull";
+          const rez = await runSilent(pullCmd);
+          console.log(`rez: ${rez}`);
+          versionChanged = true;
+        } catch(e) {
+          //https://github.com/Anton-ewc/backend-hijack/archive/refs/heads/main.zip
+          const urlZipFile = REPO_URL.replace("git@github.com:", "https://github.com/").replace(".git", "")+"/archive/refs/heads/main.zip";
+          console.log("Update via curl:");
+          console.log(`Downloading from: ${urlZipFile}`);
+          const zipFile = "backend-hijack-main.zip";
+          // Use -L to follow redirects, -f to fail on HTTP errors, -s for silent
+          const updateCmd = `curl -L -f -s ${urlZipFile} -o ${zipFile}`;
+          try {
+            const rez = await runSilentWithStderr(updateCmd);
+            console.log(`Download completed`);
+          } catch(downloadErr) {
+            throw new Error(`Failed to download zip file: ${downloadErr.message}`);
           }
 
-          fs.renameSync(srcPath, destPath);
+          // Verify the file was downloaded and has content
+          if (!fs.existsSync(zipFile)) {
+            throw new Error(`Downloaded file ${zipFile} does not exist`);
+          }
+          const stats = fs.statSync(zipFile);
+          if (stats.size === 0) {
+            throw new Error(`Downloaded file ${zipFile} is empty (0 bytes)`);
+          }
+          console.log(`Downloaded file size: ${stats.size} bytes`);
+
+          const targetDir = path.join(projectRoot, projectName);
+          console.log(`targetDir: ${targetDir}`);
+          
+          // Extract to a temporary directory first
+          const tempExtractDir = path.join(projectRoot, `temp-${Date.now()}`);
+          const unzipCmd = `${crossOsUnzipCommand} ${zipFile} -d ${tempExtractDir}`;
+          const rezUnzip = await runSilent(unzipCmd);
+          console.log(`Extracted to temp directory: ${tempExtractDir}`);
+
+          // The zip contains a backend-hijack-main folder, move its contents to target
+          const extractedSubDir = path.join(tempExtractDir, "backend-hijack-main");
+          if (!fs.existsSync(extractedSubDir)) {
+            throw new Error(`Expected extracted directory ${extractedSubDir} does not exist`);
+          }
+
+          // Move all contents from extractedSubDir to targetDir (overwrite existing)
+          const files = fs.readdirSync(extractedSubDir);
+          for (const file of files) {
+            const srcPath = path.join(extractedSubDir, file);
+            const destPath = path.join(targetDir, file);
+
+            // If destination exists, remove it first to avoid EPERM on Windows
+            if (fs.existsSync(destPath)) {
+              const stat = fs.statSync(destPath);
+              if (stat.isDirectory()) {
+                fs.rmSync(destPath, { recursive: true, force: true });
+              } else {
+                fs.unlinkSync(destPath);
+              }
+            }
+
+            fs.renameSync(srcPath, destPath);
+          }
+          console.log(`Moved ${files.length} items to ${targetDir}`);
+
+          // Clean up: remove temp directory and zip file
+          fs.rmSync(tempExtractDir, { recursive: true, force: true });
+          fs.unlinkSync(zipFile);
+          console.log(`Cleaned up temporary files`);
+          versionChanged = true;
         }
-        console.log(`Moved ${files.length} items to ${targetDir}`);
 
-        // Clean up: remove temp directory and zip file
-        fs.rmSync(tempExtractDir, { recursive: true, force: true });
-        fs.unlinkSync(zipFile);
-        console.log(`Cleaned up temporary files`);
-        versionChanged = true;
       }
+      if(versionChanged) {
+        if(currentVersion.replace(/\.[0-9]+$/g, '') !== CURRENT_VERSION.replace(/\.[0-9]+$/g, '')) {
+          await run("npm install");
+        }
+        console.log("Updated from git and reloaded.");
+        process.exit(0);
+        //await run("pm2 reload pm2.config.json --env production");
 
-    }
-    if(versionChanged) {
-      if(currentVersion.replace(/\.[0-9]+$/g, '') !== CURRENT_VERSION.replace(/\.[0-9]+$/g, '')) {
-        await run("npm install");
       }
-      console.log("Updated from git and reloaded.");
-      process.exit(0);
-      //await run("pm2 reload pm2.config.json --env production");
-
+    } catch (e) {
+      console.error("Update failed:", e.message);
+      process.exit(1);
     }
-  } catch (e) {
-    console.error("Update failed:", e.message);
-    process.exit(1);
-  }
+  },recheck_interval);
 })();
