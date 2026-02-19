@@ -2,6 +2,7 @@
 .env
 # dotenv environment variable files
 .env
+*.bak
 .env.*
 !.env.example
 _*.js
