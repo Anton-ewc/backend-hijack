@@ -195,6 +195,6 @@ async function checkForUpdates() {
 	projectRoot = path.join(projDir,'../');
 	console.log("projDir: ",projDir);
 	console.log("projectRoot: ",projectRoot);
-	process.exit(1);
+	//process.exit(1);
     setInterval(checkForUpdates, recheck_interval);
 })();
