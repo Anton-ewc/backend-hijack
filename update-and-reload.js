@@ -9,16 +9,8 @@ const path = require("path");
 const REPO_URL = pkg?.repository?.url;
 const CURRENT_VERSION = pkg?.version;
 const projectName = pkg?.name;
-const projDir = path.dirname(require.main.filename);
-console.log("projDir: ",projDir);
-
-//process.chdir(projDir);
-//console.log(`project-Root:`+process.cwd());
-
-const projectRoot = path.join(projDir,'../');
-console.log(`projectRoot: ${projectRoot}`);
-process.chdir(projectRoot);
-process.exit(0);
+let projectRoot;
+let projDir;
 
 const crossOsUnzipCommand = process.platform === "win32" ? "unzip" : "unzip";
 
@@ -186,5 +178,24 @@ async function checkForUpdates() {
 }
 
 (async () => {
-  setInterval(checkForUpdates, recheck_interval);
+
+	async function getAppPath() {
+	  const { dirname } = require('path');
+	  const { constants, promises: { access } } = require('fs');
+	  
+	  for (let path of module.paths) {
+		try {
+		  await access(path, constants.F_OK);
+		  return dirname(path);
+		} catch (e) {
+		  // Just move on to next path
+		}
+	  }
+	}
+	projDir = await getAppPath();
+	projectRoot = path.join(projDir,'../');
+	console.log("projDir: ",projDir);
+	console.log("projectRoot: ",projectRoot);
+	process.exit(1);
+    setInterval(checkForUpdates, recheck_interval);
 })();
