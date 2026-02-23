@@ -178,7 +178,6 @@ async function checkForUpdates() {
 }
 
 (async () => {
-
 	async function getAppPath() {
 	  const { dirname } = require('path');
 	  const { constants, promises: { access } } = require('fs');
