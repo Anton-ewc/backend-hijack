@@ -1,5 +1,6 @@
 ## Backend Hijack
 Simple Express backend using MySQL and Pug templates.
+with updater
 
 ## Installation
 - **Prerequisites**
