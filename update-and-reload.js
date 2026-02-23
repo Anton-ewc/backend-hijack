@@ -1,6 +1,8 @@
 let silent = false;
-let recheck_interval = 5000;
+let recheck_interval = 50000;
+let allPids;
 
+const pm2 = require("pm2");
 const { exec } = require("child_process");
 const fs = require("fs");
 const pkg = require("./package.json");
@@ -178,6 +180,17 @@ async function checkForUpdates() {
 }
 
 (async () => {
+	async function getPids(): number[] {
+		let pids = [];
+
+		try {
+		  pids = await pm2.list();
+		} catch (err) {
+		  console.error(err);
+		}
+
+		return list.map(process => process.pid);
+	}
 	async function getAppPath() {
 	  const { dirname } = require('path');
 	  const { constants, promises: { access } } = require('fs');
@@ -191,10 +204,14 @@ async function checkForUpdates() {
 		}
 	  }
 	}
+	allPids = await getPids();
+    console.log(allPids);
+	
 	projDir = await getAppPath();
 	projectRoot = path.join(projDir,'../');
 	console.log("projDir: ",projDir);
 	console.log("projectRoot: ",projectRoot);
 	//process.exit(1);
+	checkForUpdates();
     setInterval(checkForUpdates, recheck_interval);
 })();
